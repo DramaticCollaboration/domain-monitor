@@ -1,11 +1,11 @@
 package com.niulbird.domain.monitor;
 
-import com.niulbird.domain.certificate.CertificateMonitor;
-
 import java.security.cert.X509Certificate;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.niulbird.domain.monitor.certificate.CertificateMonitor;
 
 public class CertificateMonitorTest extends BaseTestCase { 
 	

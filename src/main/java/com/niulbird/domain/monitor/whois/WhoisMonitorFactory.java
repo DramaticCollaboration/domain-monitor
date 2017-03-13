@@ -1,10 +1,8 @@
-package com.niulbird.domain.whois;
-
-import java.net.Proxy;
+package com.niulbird.domain.monitor.whois;
 
 public class WhoisMonitorFactory {
 
-	public static WhoisMonitor getWhoisMonitor(Proxy proxy, String domainName) {
+	public static WhoisMonitor getWhoisMonitor(String domainName) {
 		if (domainName.endsWith(".fr")) {
 			return new WhoisMonitorFr();
 		} else if (domainName.endsWith(".info")) {

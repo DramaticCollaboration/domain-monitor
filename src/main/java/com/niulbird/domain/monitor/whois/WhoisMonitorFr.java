@@ -1,4 +1,4 @@
-package com.niulbird.domain.whois;
+package com.niulbird.domain.monitor.whois;
 
 import java.io.IOException;
 import java.net.Proxy;

@@ -1,4 +1,4 @@
-package com.niulbird.domain.whois;
+package com.niulbird.domain.monitor.whois;
 
 import java.io.IOException;
 import java.net.Proxy;
@@ -9,14 +9,14 @@ import org.joda.time.Days;
 
 import com.niulbird.domain.Domain;
 
-public class WhoisMonitorOrg extends WhoisMonitor {
-	private static String DOMAIN_NAME = "Domain Name: ";
-	private static String REGISTRAR = "Registrar: ";
-	private static String CREATE_DATE = "Creation Date: ";
-	private static String UPDATE_DATE = "Updated Date: ";
-	private static String EXPIRY_DATE = "Registry Expiry Date: ";
+public class WhoisMonitorIt extends WhoisMonitor {
+	private static String DOMAIN_NAME = "Domain:             ";
+	private static String REGISTRAR = "Organization:     ";
+	private static String CREATE_DATE = "Created:            ";
+	private static String UPDATE_DATE = "Last Update:        ";
+	private static String EXPIRY_DATE = "Expire Date:        ";
 	
-	public WhoisMonitorOrg() {
+	public WhoisMonitorIt() {
 		super();
 	}
 	
@@ -24,7 +24,7 @@ public class WhoisMonitorOrg extends WhoisMonitor {
 		if (proxy != null) {
 			whoisClient.setProxy(proxy);
 		}
-		whoisClient.connect("whois.pir.org");
+		whoisClient.connect("whois.nic.it");
 	}
 
 	@Override

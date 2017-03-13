@@ -3,8 +3,8 @@ package com.niulbird.domain.monitor;
 import org.junit.Test;
 
 import com.niulbird.domain.Domain;
-import com.niulbird.domain.whois.WhoisMonitor;
-import com.niulbird.domain.whois.WhoisMonitorFactory;
+import com.niulbird.domain.monitor.whois.WhoisMonitor;
+import com.niulbird.domain.monitor.whois.WhoisMonitorFactory;
 
 import java.io.IOException;
 
@@ -49,7 +49,7 @@ public class WhoisMonitorTest extends BaseTestCase {
 	
 	private Domain getDomain(String name) {
 		Domain domain = null;
-		WhoisMonitor monitor = WhoisMonitorFactory.getWhoisMonitor(null, name);
+		WhoisMonitor monitor = WhoisMonitorFactory.getWhoisMonitor(name);
 		try {
 			monitor.init(null, name);
 			domain = monitor.query(name);

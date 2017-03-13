@@ -1,4 +1,4 @@
-package com.niulbird.domain.whois;
+package com.niulbird.domain.monitor.whois;
 
 import java.io.IOException;
 import java.net.Proxy;
@@ -7,12 +7,15 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.net.whois.WhoisClient;
 
 import com.niulbird.domain.Domain;
-import com.niulbird.domain.monitor.BaseMonitor;
 
-public abstract class WhoisMonitor extends BaseMonitor implements WhoisMonitorIF {
+public abstract class WhoisMonitor implements WhoisMonitorIF {
+	protected final Log logger = LogFactory.getLog(getClass());
+	
 	protected WhoisClient whoisClient;
 	protected Proxy proxy;
 	
@@ -26,6 +29,7 @@ public abstract class WhoisMonitor extends BaseMonitor implements WhoisMonitorIF
 	
 	public Domain query(String name) {
 		logger.debug("Getting info for: " + name);
+		
 		String info = new String();
 		Domain domain = new Domain();
 		domain.setName(name); 

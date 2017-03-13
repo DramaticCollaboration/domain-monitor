@@ -1,4 +1,4 @@
-package com.niulbird.domain.certificate;
+package com.niulbird.domain.monitor.certificate;
 
 import java.net.URL;
 import java.security.SecureRandom;
@@ -22,6 +22,9 @@ public class CertificateMonitor extends BaseMonitor {
 		Certificate[] certs;
 		X509Certificate cert;
 		try {
+			
+			
+			
 			// configure the SSLContext with a TrustManager
 			SSLContext ctx = SSLContext.getInstance("TLS");
 			ctx.init(new KeyManager[0], new TrustManager[] { new DefaultTrustManager() }, new SecureRandom());
