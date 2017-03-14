@@ -14,7 +14,7 @@ import org.springframework.context.annotation.ImportResource;
 public class MonitorApp extends BaseMonitor implements CommandLineRunner {
 	@Override
 	public void run(String... args) {
-		execute();
+		execute(true);
 	}
 	
 	public static void main(String[] args) {

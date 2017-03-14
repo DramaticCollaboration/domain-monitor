@@ -48,11 +48,38 @@ public abstract class BaseMonitor {
 	@Autowired
 	private freemarker.template.Configuration freeMarkerConfiguration;
 	
-    protected void execute() {
-		Proxy proxy = null;
+    protected void execute(boolean summaryReport) {
 		WhoisMonitor whoisMonitor = null;
+		MailUtil mailUtil = new MailUtil();
 
-		if (props.getProperty("conn.proxy").equalsIgnoreCase("true")) {
+		Proxy proxy = getProxy();
+
+		for (int i = 0; i < Integer.parseInt(props.getProperty("list.no")); i++) {
+			List<Domain> domains = getDomains(i, mailUtil, whoisMonitor, proxy);
+			List<Certificate> certificates = getCertificates(i, mailUtil);
+
+			Collections.sort(certificates);
+			Collections.sort(domains);
+			
+			if (summaryReport) {
+				String body = "";
+				try {
+					Map<String, Object> map = new HashMap<String, Object>();
+					map.put( "domains", domains);
+					map.put("certificates", certificates);
+					body = FreeMarkerTemplateUtils.processTemplateIntoString(freeMarkerConfiguration.getTemplate("summary.ftl"), map);
+				} catch (IOException | TemplateException e) {
+					logger.error("Error creating template: " + e.getMessage(), e);
+				}
+			
+				mailUtil.sendMail(mailSender, props.getProperty(i + ".list.email").split("\\s*,\\s*"), body, props);
+			}
+		}
+	}
+    
+    private Proxy getProxy() {
+    	Proxy proxy = null;
+    	if (props.getProperty("conn.proxy").equalsIgnoreCase("true")) {
 			SocketAddress addr = new InetSocketAddress(props.getProperty("conn.proxy.host"),
 					Integer.parseInt(props.getProperty("conn.proxy.port")));
 			if (props.getProperty("conn.proxy.type").equalsIgnoreCase("socks")) {
@@ -65,65 +92,75 @@ public abstract class BaseMonitor {
 				System.setProperty("https.proxyPort", props.getProperty("conn.proxy.port"));
 			}
 		}
-
-		for (int i = 0; i < Integer.parseInt(props.getProperty("list.no")); i++) {
-			Domain domain = null;
-			List<String> domainNames = Arrays.asList(props.getProperty(i + ".list.domain").split("\\s*,\\s*"));
-			List<Domain> domains = new ArrayList<Domain>();
-			for (String domainName : domainNames) {
-				whoisMonitor = WhoisMonitorFactory.getWhoisMonitor(domainName);
-				try {
-					whoisMonitor.init(proxy, domainName);
-
-					domain = whoisMonitor.query(domainName);
-					logger.debug("Domain Info: Name=" + domain.getName() + "|Registrar=" + domain.getRegistrar()
-							+ "|Create=" + domain.getCreateDate() + "|Update=" + domain.getUpdateDate() + "|Expiry="
-							+ domain.getExpiryDate());
-
-					if (ArrayUtils.contains(new int[] { 5, 10, 30, 60 }, domain.getExpiryDays())) {
-						logger.debug("HELLO" + domain.getExpiryDays());
-					}
-
-					whoisMonitor.disconnect();
-				} catch (IOException ioe) {
-					logger.error("Error on initialization: " + ioe.getMessage(), ioe);
-				}
-				domains.add(domain);
-			}
-			
-			List<String> certificateHostNames = Arrays.asList(props.getProperty(i + ".list.cert").split("\\s*,\\s*"));
-			List<Certificate> certificates = new ArrayList<Certificate>();
-			for (String certificateHostName : certificateHostNames) {
-				CertificateMonitor certificateMonitor = new CertificateMonitor();
-				X509Certificate x509Certificate = certificateMonitor.query(certificateHostName);
-				int expiryDays = Days.daysBetween(new DateTime(Calendar.getInstance().getTime()), new DateTime(x509Certificate.getNotAfter())).getDays();
-				Certificate certificate = new Certificate(certificateHostName, 
-						getCNFromDN(x509Certificate.getSubjectDN().toString()),
-						getCNFromDN(x509Certificate.getIssuerDN().toString()),
-						x509Certificate.getNotBefore(),
-						x509Certificate.getNotAfter(),
-						expiryDays);
-				certificates.add(certificate);
-			}
-			
-			MailUtil mailUtil = new MailUtil();
-
-			Collections.sort(certificates);
-			Collections.sort(domains);
-			
-			String body = "";
+    	return proxy;
+    }
+    
+    private List<Domain> getDomains(int iteration, MailUtil mailUtil, WhoisMonitor whoisMonitor, Proxy proxy) {
+		Domain domain = null;
+		List<String> domainNames = Arrays.asList(props.getProperty(iteration + ".list.domain").split("\\s*,\\s*"));
+		List<Domain> domains = new ArrayList<Domain>();
+    	for (String domainName : domainNames) {
+			whoisMonitor = WhoisMonitorFactory.getWhoisMonitor(domainName);
 			try {
-				Map<String, Object> map = new HashMap<String, Object>();
-				map.put( "domains", domains);
-				map.put("certificates", certificates);
-				body = FreeMarkerTemplateUtils.processTemplateIntoString(freeMarkerConfiguration.getTemplate("summary.ftl"), map);
-			} catch (IOException | TemplateException e) {
-				logger.error("Error creating template: " + e.getMessage(), e);
+				whoisMonitor.init(proxy, domainName);
+
+				domain = whoisMonitor.query(domainName);
+				logger.info("Domain Info: Name=" + domain.getName() + "|Registrar=" + domain.getRegistrar()
+						+ "|Create=" + domain.getCreateDate() + "|Update=" + domain.getUpdateDate() + "|Expiry="
+						+ domain.getExpiryDate());
+
+				if (ArrayUtils.contains(props.getProperty("alert.period").split("\\s*,\\s*"), Integer.toString(domain.getExpiryDays()))) {
+					String body = "";
+					try {
+						Map<String, Object> map = new HashMap<String, Object>();
+						map.put( "domain", domain);
+						body = FreeMarkerTemplateUtils.processTemplateIntoString(freeMarkerConfiguration.getTemplate("domain-expiry-alert.ftl"), map);
+					} catch (IOException | TemplateException e) {
+						logger.error("Error creating template: " + e.getMessage(), e);
+					}
+					
+					mailUtil.sendMail(mailSender, props.getProperty(iteration + ".list.email").split("\\s*,\\s*"), body, props);
+				}
+
+				whoisMonitor.disconnect();
+			} catch (IOException ioe) {
+				logger.error("Error on initialization: " + ioe.getMessage(), ioe);
 			}
-			
-			mailUtil.sendMail(mailSender, props.getProperty(i + ".list.email").split("\\s*,\\s*"), body, props);
+			domains.add(domain);
 		}
-	}
+    	return domains;
+    }
+    
+    private List<Certificate> getCertificates(int iteration, MailUtil mailUtil) {
+    	List<Certificate> certificates = new ArrayList<Certificate>();
+		List<String> certificateHostNames = Arrays.asList(props.getProperty(iteration + ".list.cert").split("\\s*,\\s*"));
+    	for (String certificateHostName : certificateHostNames) {
+			CertificateMonitor certificateMonitor = new CertificateMonitor();
+			X509Certificate x509Certificate = certificateMonitor.query(certificateHostName);
+			int expiryDays = Days.daysBetween(new DateTime(Calendar.getInstance().getTime()), new DateTime(x509Certificate.getNotAfter())).getDays();
+			Certificate certificate = new Certificate(certificateHostName, 
+					getCNFromDN(x509Certificate.getSubjectDN().toString()),
+					getCNFromDN(x509Certificate.getIssuerDN().toString()),
+					x509Certificate.getNotBefore(),
+					x509Certificate.getNotAfter(),
+					expiryDays);
+			certificates.add(certificate);
+			
+			if (ArrayUtils.contains(props.getProperty("alert.period").split("\\s*,\\s*"), Integer.toString(certificate.getExpiryDays()))) {
+				String body = "";
+				try {
+					Map<String, Object> map = new HashMap<String, Object>();
+					map.put( "certificate", certificate);
+					body = FreeMarkerTemplateUtils.processTemplateIntoString(freeMarkerConfiguration.getTemplate("certificate-expiry-alert.ftl"), map);
+				} catch (IOException | TemplateException e) {
+					logger.error("Error creating template: " + e.getMessage(), e);
+				}
+				
+				mailUtil.sendMail(mailSender, props.getProperty(iteration + ".list.email").split("\\s*,\\s*"), body, props);
+			}
+		}
+    	return certificates;
+    }
 	
 	private String getCNFromDN(String dn) {
 		String cn = null;

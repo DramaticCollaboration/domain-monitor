@@ -7,8 +7,14 @@ import org.springframework.stereotype.Service;
 public class MonitorWeb extends BaseMonitor {
 
 	@Scheduled(cron="0 0 9 * * MON")
-	public void runMonitor() {
+	public void runMonitorReport() {
 		logger.debug("Running monitor.");
-		execute();
+		execute(true);
+	}
+	
+	@Scheduled(cron="0 0 9 * * SUN,TUE-SAT")
+	public void runMonitorAlert() {
+		logger.debug("Running monitor.");
+		execute(false);
 	}
 }

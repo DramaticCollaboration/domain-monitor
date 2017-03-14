@@ -14,7 +14,6 @@
     <appender-ref ref="CONSOLE" />
 </category>
 
-
 <!-- Category Section End -->
     <!-- ======================= -->
     <!-- Setup the Root category -->
