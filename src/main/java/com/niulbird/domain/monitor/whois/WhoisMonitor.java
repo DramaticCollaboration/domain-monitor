@@ -28,7 +28,7 @@ public abstract class WhoisMonitor implements WhoisMonitorIF {
 	}
 	
 	public Domain query(String name) {
-		logger.debug("Getting info for: " + name);
+		logger.info("Getting info for: " + name);
 		
 		String info = new String();
 		Domain domain = new Domain();
@@ -38,7 +38,7 @@ public abstract class WhoisMonitor implements WhoisMonitorIF {
 	    		init(proxy, name);
 	    	}
 	      	info = whoisClient.query(name);
-	      	logger.trace("Domain Info: " + info);
+	      	logger.info("Domain Info: " + info);
 	      	domain = parseDomain(info);
 	      	whoisClient.disconnect();
 	    } catch (IOException e) {

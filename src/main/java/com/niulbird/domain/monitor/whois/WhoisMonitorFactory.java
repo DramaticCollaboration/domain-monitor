@@ -1,8 +1,16 @@
 package com.niulbird.domain.monitor.whois;
 
+import java.util.Properties;
+
+import org.apache.commons.lang3.ArrayUtils;
+
 public class WhoisMonitorFactory {
 
-	public static WhoisMonitor getWhoisMonitor(String domainName) {
+	public static WhoisMonitor getWhoisMonitor(String domainName, Properties props) {
+		if (ArrayUtils.contains(props.getProperty("whois.override.verisign").split("\\s*,\\s*"), domainName)) {
+			return new WhoisMonitorVerisign();
+		}
+		
 		if (domainName.endsWith(".fr")) {
 			return new WhoisMonitorFr();
 		} else if (domainName.endsWith(".info")) {

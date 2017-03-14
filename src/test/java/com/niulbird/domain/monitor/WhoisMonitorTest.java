@@ -7,6 +7,10 @@ import com.niulbird.domain.monitor.whois.WhoisMonitor;
 import com.niulbird.domain.monitor.whois.WhoisMonitorFactory;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketAddress;
+import java.util.Properties;
 
 import org.junit.Assert;
 
@@ -32,7 +36,6 @@ public class WhoisMonitorTest extends BaseTestCase {
 		Domain domain = getDomain(name);
 		Assert.assertNotNull(domain.getExpiryDate());
 	}
-	
 	@Test
 	public void queryIt() {
 		String name = "adility.it";
@@ -47,11 +50,25 @@ public class WhoisMonitorTest extends BaseTestCase {
 		Assert.assertNotNull(domain.getExpiryDate());
 	}
 	
+	@Test
+	public void queryVerisign() {
+		String name = "e-deliverygroup.com";
+		Domain domain = getDomain(name);
+		Assert.assertNotNull(domain.getExpiryDate());
+	}
+	
 	private Domain getDomain(String name) {
 		Domain domain = null;
-		WhoisMonitor monitor = WhoisMonitorFactory.getWhoisMonitor(name);
+		Properties props = new Properties();
+		props.setProperty("whois.override.verisign", "e-deliverygroup.com");
+		
+		WhoisMonitor monitor = WhoisMonitorFactory.getWhoisMonitor(name, props);
 		try {
-			monitor.init(null, name);
+			SocketAddress addr = new InetSocketAddress("localhost",
+					3128);
+			Proxy proxy = new Proxy(Proxy.Type.SOCKS, addr);
+			
+			monitor.init(proxy, name);
 			domain = monitor.query(name);
 			logger.debug("Domain Info: Name=" + domain.getName() + "|Registrar=" + domain.getRegistrar() + "|Create=" 
 			+ domain.getCreateDate() + "|Update=" + domain.getUpdateDate() + "|Expiry=" + domain.getExpiryDate());

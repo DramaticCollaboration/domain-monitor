@@ -100,7 +100,7 @@ public abstract class BaseMonitor {
 		List<String> domainNames = Arrays.asList(props.getProperty(iteration + ".list.domain").split("\\s*,\\s*"));
 		List<Domain> domains = new ArrayList<Domain>();
     	for (String domainName : domainNames) {
-			whoisMonitor = WhoisMonitorFactory.getWhoisMonitor(domainName);
+			whoisMonitor = WhoisMonitorFactory.getWhoisMonitor(domainName, props);
 			try {
 				whoisMonitor.init(proxy, domainName);
 
