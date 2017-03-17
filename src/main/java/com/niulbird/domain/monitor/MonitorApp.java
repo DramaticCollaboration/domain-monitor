@@ -14,10 +14,14 @@ import org.springframework.context.annotation.ImportResource;
 public class MonitorApp extends BaseMonitor implements CommandLineRunner {
 	@Override
 	public void run(String... args) {
-		execute(true);
+		if (args.length >= 1 && args[0].equalsIgnoreCase("true")) {
+			execute(true);
+		} else {
+			execute(false);
+		}
 	}
 	
 	public static void main(String[] args) {
-        SpringApplication.run(MonitorApp.class, args);
+        SpringApplication.run(MonitorApp.class, args).close();
     }
 }

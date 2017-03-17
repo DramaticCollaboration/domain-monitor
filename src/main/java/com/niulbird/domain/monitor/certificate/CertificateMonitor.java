@@ -22,9 +22,6 @@ public class CertificateMonitor extends BaseMonitor {
 		Certificate[] certs;
 		X509Certificate cert;
 		try {
-			
-			
-			
 			// configure the SSLContext with a TrustManager
 			SSLContext ctx = SSLContext.getInstance("TLS");
 			ctx.init(new KeyManager[0], new TrustManager[] { new DefaultTrustManager() }, new SecureRandom());
