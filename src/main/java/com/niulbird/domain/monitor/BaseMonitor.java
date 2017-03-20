@@ -126,7 +126,9 @@ public abstract class BaseMonitor {
 			} catch (IOException ioe) {
 				logger.error("Error on initialization: " + ioe.getMessage(), ioe);
 			}
-			domains.add(domain);
+			if (domain != null && domain.getRegistrar() != null) {
+				domains.add(domain);
+			}
 		}
     	return domains;
     }
