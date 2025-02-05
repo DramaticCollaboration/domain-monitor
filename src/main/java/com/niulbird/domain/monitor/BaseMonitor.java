@@ -70,7 +70,7 @@ public abstract class BaseMonitor {
 				String body = "";
 				try {
 					Map<String, Object> map = new HashMap<String, Object>();
-					map.put( "domains", domains);
+					map.put("domains", domains);
 					map.put("certificates", certificates);
 					body = FreeMarkerTemplateUtils.processTemplateIntoString(freeMarkerConfiguration.getTemplate("summary.ftl"), map);
 				} catch (IOException | TemplateException e) {

@@ -38,7 +38,7 @@
               <table border="0" cellpadding="10" cellspacing="0" width="100%" id="emailFooter">
                 <tr>
                   <td align="center" valign="top">
-                    &copy; niulbird.com
+                    &copy; empasy.com
                   </td>
                 </tr>
               </table>
