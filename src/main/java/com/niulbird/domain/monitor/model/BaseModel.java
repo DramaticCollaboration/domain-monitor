@@ -1,4 +1,4 @@
-package com.niulbird.domain;
+package com.niulbird.domain.monitor.model;
 
 import java.util.Date;
 

@@ -7,11 +7,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.net.whois.WhoisClient;
 
-import com.niulbird.domain.Domain;
+import com.niulbird.domain.monitor.model.Domain;
 
 public abstract class WhoisMonitor implements WhoisMonitorIF {
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -49,18 +51,29 @@ public abstract class WhoisMonitor implements WhoisMonitorIF {
 	
 	protected String getValue(String info, String name) {
 		int startIndex = info.indexOf(name);
+		if(startIndex < 0)
+		{
+			return null;
+		}
 		int endIndex = info.indexOf('\n', startIndex);
 		return info.substring(startIndex + name.length(), endIndex).replaceAll("(\\r|\\n)", "");
 	}
 	
 	protected Date stringToDate(String input, String format) {
-		Date date = null;
-		DateFormat formatter = new SimpleDateFormat(format);
 		try {
-			date = (Date)formatter.parse(input);
-		} catch (ParseException e) {
-			logger.error("Error parsing date: " + e.getMessage(), e);
+			return DateUtils.parseDate(input, format);
+		} catch (ParseException | NullPointerException e) {
+			logger.error("Error parsing date: " + e.getMessage());
 		}
-		return date;
+		return null;
+	}
+
+	protected Date stringToDate(String input, String[] format) {
+		try {
+			return DateUtils.parseDate(input, format);
+		} catch (ParseException | NullPointerException e) {
+			logger.error("Error parsing date: " + e.getMessage());
+		}
+		return null;
 	}
 }

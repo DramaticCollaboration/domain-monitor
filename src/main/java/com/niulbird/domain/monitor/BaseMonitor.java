@@ -18,6 +18,9 @@ import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 
+import com.niulbird.domain.monitor.config.MonitorTargetConfig;
+import com.niulbird.domain.monitor.model.MonitorProxy;
+import com.niulbird.domain.monitor.model.MonitorTarget;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,24 +30,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 
-import com.niulbird.domain.Certificate;
-import com.niulbird.domain.Domain;
+import com.niulbird.domain.monitor.model.Certificate;
+import com.niulbird.domain.monitor.model.Domain;
 import com.niulbird.domain.monitor.certificate.CertificateMonitor;
 import com.niulbird.domain.monitor.util.MailUtil;
 import com.niulbird.domain.monitor.whois.WhoisMonitor;
 import com.niulbird.domain.monitor.whois.WhoisMonitorFactory;
 
 import freemarker.template.TemplateException;
+import org.springframework.util.CollectionUtils;
 
 public abstract class BaseMonitor {
     protected final Log logger = LogFactory.getLog(getClass());
 
 	@Autowired
-	private Properties props;
-	
+	private MonitorTargetConfig targetConfig;
+
 	@Autowired
 	private JavaMailSenderImpl mailSender;
-	
+
 	@Autowired
 	private freemarker.template.Configuration freeMarkerConfiguration;
 	
@@ -54,9 +58,10 @@ public abstract class BaseMonitor {
 
 		Proxy proxy = getProxy();
 
-		for (int i = 0; i < Integer.parseInt(props.getProperty("list.no")); i++) {
-			List<Domain> domains = getDomains(i, mailUtil, whoisMonitor, proxy);
-			List<Certificate> certificates = getCertificates(i, mailUtil);
+
+		for (MonitorTarget target : targetConfig.getTargets()) {
+			List<Domain> domains = getDomains(target,  mailUtil, whoisMonitor, proxy);
+			List<Certificate> certificates = getCertificates(target, mailUtil);
 
 			Collections.sort(certificates);
 			Collections.sort(domains);
@@ -72,35 +77,34 @@ public abstract class BaseMonitor {
 					logger.error("Error creating template: " + e.getMessage(), e);
 				}
 			
-				mailUtil.sendMail(mailSender, props.getProperty(i + ".list.email").split("\\s*,\\s*"), body, props);
+				mailUtil.sendMail(mailSender, target.getEmails().toArray(new String[0]), body, targetConfig.getEmail());
 			}
 		}
 	}
     
     private Proxy getProxy() {
     	Proxy proxy = null;
-    	if (props.getProperty("conn.proxy").equalsIgnoreCase("true")) {
-			SocketAddress addr = new InetSocketAddress(props.getProperty("conn.proxy.host"),
-					Integer.parseInt(props.getProperty("conn.proxy.port")));
-			if (props.getProperty("conn.proxy.type").equalsIgnoreCase("socks")) {
+    	if (targetConfig.getProxy() != null) {
+			MonitorProxy config = targetConfig.getProxy();
+			SocketAddress addr = new InetSocketAddress(config.getHost(), config.getPort());
+			if (config.getType().equalsIgnoreCase("socks")) {
 				proxy = new Proxy(Proxy.Type.SOCKS, addr);
-				System.setProperty("socksProxyHost", props.getProperty("conn.proxy.host"));
-		        System.setProperty("socksProxyPort", props.getProperty("conn.proxy.port"));
-			} else if (props.getProperty("conn.proxy.type").equalsIgnoreCase("http")) {
+				System.setProperty("socksProxyHost", config.getHost());
+		        System.setProperty("socksProxyPort", String.valueOf(config.getPort()));
+			} else if (config.getType().equalsIgnoreCase("http")) {
 				proxy = new Proxy(Proxy.Type.HTTP, addr);
-				System.setProperty("https.proxyPort", props.getProperty("conn.proxy.host"));
-				System.setProperty("https.proxyPort", props.getProperty("conn.proxy.port"));
+				System.setProperty("https.proxyPort", config.getHost());
+				System.setProperty("https.proxyPort", String.valueOf(config.getPort()));
 			}
 		}
     	return proxy;
     }
     
-    private List<Domain> getDomains(int iteration, MailUtil mailUtil, WhoisMonitor whoisMonitor, Proxy proxy) {
+    private List<Domain> getDomains(MonitorTarget target, MailUtil mailUtil, WhoisMonitor whoisMonitor, Proxy proxy) {
 		Domain domain = null;
-		List<String> domainNames = Arrays.asList(props.getProperty(iteration + ".list.domain").split("\\s*,\\s*"));
 		List<Domain> domains = new ArrayList<Domain>();
-    	for (String domainName : domainNames) {
-			whoisMonitor = WhoisMonitorFactory.getWhoisMonitor(domainName, props);
+    	for (String domainName : target.getDomains()) {
+			whoisMonitor = WhoisMonitorFactory.getWhoisMonitor(domainName, targetConfig.getWhoisOverrideVerisign());
 			try {
 				whoisMonitor.init(proxy, domainName);
 
@@ -109,7 +113,7 @@ public abstract class BaseMonitor {
 						+ "|Create=" + domain.getCreateDate() + "|Update=" + domain.getUpdateDate() + "|Expiry="
 						+ domain.getExpiryDate());
 
-				if (ArrayUtils.contains(props.getProperty("alert.period").split("\\s*,\\s*"), Integer.toString(domain.getExpiryDays()))) {
+				if (!CollectionUtils.isEmpty(targetConfig.getAlertPeriod()) && targetConfig.getAlertPeriod().contains(domain.getExpiryDays())) {
 					String body = "";
 					try {
 						Map<String, Object> map = new HashMap<String, Object>();
@@ -119,7 +123,7 @@ public abstract class BaseMonitor {
 						logger.error("Error creating template: " + e.getMessage(), e);
 					}
 					
-					mailUtil.sendMail(mailSender, props.getProperty(iteration + ".list.email").split("\\s*,\\s*"), body, props);
+					mailUtil.sendMail(mailSender, target.getEmails().toArray(new String[0]),  body, targetConfig.getEmail());
 				}
 
 				whoisMonitor.disconnect();
@@ -133,10 +137,9 @@ public abstract class BaseMonitor {
     	return domains;
     }
     
-    private List<Certificate> getCertificates(int iteration, MailUtil mailUtil) {
+    private List<Certificate> getCertificates(MonitorTarget target, MailUtil mailUtil) {
     	List<Certificate> certificates = new ArrayList<Certificate>();
-		List<String> certificateHostNames = Arrays.asList(props.getProperty(iteration + ".list.cert").split("\\s*,\\s*"));
-    	for (String certificateHostName : certificateHostNames) {
+    	for (String certificateHostName : target.getCerts()) {
 			CertificateMonitor certificateMonitor = new CertificateMonitor();
 			X509Certificate x509Certificate = certificateMonitor.query(certificateHostName);
 			int expiryDays = Days.daysBetween(new DateTime(Calendar.getInstance().getTime()), new DateTime(x509Certificate.getNotAfter())).getDays();
@@ -148,7 +151,7 @@ public abstract class BaseMonitor {
 					expiryDays);
 			certificates.add(certificate);
 			
-			if (ArrayUtils.contains(props.getProperty("alert.period").split("\\s*,\\s*"), Integer.toString(certificate.getExpiryDays()))) {
+			if (!CollectionUtils.isEmpty(targetConfig.getAlertPeriod()) && targetConfig.getAlertPeriod().contains(certificate.getExpiryDays())) {
 				String body = "";
 				try {
 					Map<String, Object> map = new HashMap<String, Object>();
@@ -158,7 +161,7 @@ public abstract class BaseMonitor {
 					logger.error("Error creating template: " + e.getMessage(), e);
 				}
 				
-				mailUtil.sendMail(mailSender, props.getProperty(iteration + ".list.email").split("\\s*,\\s*"), body, props);
+				mailUtil.sendMail(mailSender, target.getEmails().toArray(new String[0]), body, targetConfig.getEmail());
 			}
 		}
     	return certificates;

@@ -8,7 +8,7 @@ import org.apache.commons.net.whois.WhoisClient;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 
-import com.niulbird.domain.Domain;
+import com.niulbird.domain.monitor.model.Domain;
 
 public class WhoisMonitorDefault extends WhoisMonitor {
 	private static String DOMAIN_NAME = "Domain Name: ";
@@ -34,9 +34,9 @@ public class WhoisMonitorDefault extends WhoisMonitor {
 		
 		domain.setName(getValue(info, DOMAIN_NAME));
 		domain.setRegistrar(getValue(info, REGISTRAR));
-		domain.setCreateDate(stringToDate(getValue(info, CREATE_DATE), "dd-MMM-yyyy"));
-		domain.setUpdateDate(stringToDate(getValue(info, UPDATE_DATE), "dd-MMM-yyyy"));
-		domain.setExpiryDate(stringToDate(getValue(info, EXPIRY_DATE), "dd-MMM-yyyy"));
+		domain.setCreateDate(stringToDate(getValue(info, CREATE_DATE), new String[]{"dd-MMM-yyyy", "yyyy-MM-dd'T'HH:mm:ssX"}));
+		domain.setUpdateDate(stringToDate(getValue(info, UPDATE_DATE), new String[]{"dd-MMM-yyyy", "yyyy-MM-dd'T'HH:mm:ssX"}));
+		domain.setExpiryDate(stringToDate(getValue(info, EXPIRY_DATE), new String[]{"dd-MMM-yyyy", "yyyy-MM-dd'T'HH:mm:ssX"}));
 		domain.setExpiryDays(Days.daysBetween(new DateTime(Calendar.getInstance().getTime()), new DateTime(domain.getExpiryDate())).getDays());
 		
 		return domain;

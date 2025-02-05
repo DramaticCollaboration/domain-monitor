@@ -1,0 +1,64 @@
+spring:
+  profiles:
+    active: dev
+
+  mail:
+    host: smtp.host
+    username: user@smtp.host
+    password: myPassword
+
+server:
+  port: 8082
+
+management:
+  server:
+    port: 54001
+
+---
+spring:
+  profiles: dev
+
+monitor:
+#  proxy:
+#    host:
+#    port:
+#    type: socks
+  whois:
+    override:
+      verisign:
+        - empasy.com
+  alert:
+    period:
+      - 10
+      - 20
+      - 30
+  email:
+    subject: test
+    from:
+      email: poh@empasy.com
+      name: poh
+  targets:
+  - domains:
+      - empasy.com
+    certs:
+      - empasy.com
+    emails:
+      - qudansdl@gmail.com
+      - poh@empasy.com
+  - domains:
+      - unvus.com
+      - basicit.co.kr
+    certs:
+      - unvus.com
+      - basicit.co.kr
+    emails:
+      - qudansdl@gmail.com
+      - poh@empasy.com
+
+---
+spring:
+  profiles: test
+
+---
+spring:
+  profiles: prod

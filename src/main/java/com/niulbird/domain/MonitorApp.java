@@ -1,16 +1,17 @@
-package com.niulbird.domain.monitor;
+package com.niulbird.domain;
 
+import com.niulbird.domain.monitor.BaseMonitor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableAutoConfiguration
 @Configuration
-@ImportResource({"classpath*:applicationContext.xml"})
+@EnableScheduling
 public class MonitorApp extends BaseMonitor implements CommandLineRunner {
 	@Override
 	public void run(String... args) {

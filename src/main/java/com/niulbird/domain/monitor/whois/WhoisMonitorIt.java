@@ -7,7 +7,7 @@ import java.util.Calendar;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 
-import com.niulbird.domain.Domain;
+import com.niulbird.domain.monitor.model.Domain;
 
 public class WhoisMonitorIt extends WhoisMonitor {
 	private static String DOMAIN_NAME = "Domain:             ";
