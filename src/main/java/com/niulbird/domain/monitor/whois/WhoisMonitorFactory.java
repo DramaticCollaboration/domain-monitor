@@ -1,13 +1,14 @@
 package com.niulbird.domain.monitor.whois;
 
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.lang3.ArrayUtils;
 
 public class WhoisMonitorFactory {
 
-	public static WhoisMonitor getWhoisMonitor(String domainName, Properties props) {
-		if (ArrayUtils.contains(props.getProperty("whois.override.verisign").split("\\s*,\\s*"), domainName)) {
+	public static WhoisMonitor getWhoisMonitor(String domainName, List<String> whoisOverrideVerisign) {
+		if (whoisOverrideVerisign.contains(domainName)) {
 			return new WhoisMonitorVerisign();
 		}
 		
